@@ -1,0 +1,17 @@
+{
+  "name": "com.tappytale.boss-framework",
+  "version": "0.1.0",
+  "displayName": "Boss Fight Framework",
+  "description": "Data-driven boss fight framework for Unity 6.",
+  "unity": "6000.0",
+  "author": {
+    "name": "Tappy Tale"
+  },
+  "keywords": [
+    "boss",
+    "combat",
+    "bullet-hell",
+    "scriptableobject"
+  ],
+  "samples": []
+}
