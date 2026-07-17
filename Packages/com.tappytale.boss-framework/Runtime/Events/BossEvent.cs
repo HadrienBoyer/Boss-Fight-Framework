@@ -10,6 +10,15 @@ namespace TappyTale.BossFight.Events
         Died,
         AttackStarted,
         AttackEnded,
+        TimelineAction,
+        TelegraphStarted,
+        TelegraphEnded,
+        ProjectileSpawned,
+        ProjectileDespawned,
+        ParryWindowOpened,
+        ParryWindowClosed,
+        PerfectDodgeWindowOpened,
+        PerfectDodgeWindowClosed,
         PlayerParried,
         PlayerPerfectDodged
     }
