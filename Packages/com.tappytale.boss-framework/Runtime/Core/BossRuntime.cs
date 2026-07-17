@@ -1,8 +1,11 @@
 using System;
+using TappyTale.BossFight.Attacks;
 using TappyTale.BossFight.Combat;
 using TappyTale.BossFight.Data;
 using TappyTale.BossFight.Events;
 using TappyTale.BossFight.Phases;
+using TappyTale.BossFight.Projectiles;
+using TappyTale.BossFight.Telegraphs;
 
 namespace TappyTale.BossFight.Core
 {
@@ -12,26 +15,41 @@ namespace TappyTale.BossFight.Core
         private readonly BossEventHub _events;
         private readonly BossHealthService _health;
         private readonly BossPhaseController _phases;
+        private readonly BossTimelineRunner _timeline;
+        private readonly BossAttackScheduler _scheduler;
+        private readonly BossReactionWindowService _reactionWindows;
+        private readonly BossTelegraphService _telegraphs;
+        private readonly BossProjectilePool _projectiles;
 
         public BossRuntime(BossContext context, BossDefinition definition = null)
         {
             Context = context ?? throw new ArgumentNullException(nameof(context));
             TickSystem = new BossTickSystem();
 
-            _events = new BossEventHub();
-            Context.Services.Register(_events);
-            _events.Initialize(Context);
-
-            _health = new BossHealthService();
-            Context.Services.Register(_health);
-            _health.Initialize(Context);
+            _events = RegisterService(new BossEventHub());
+            _health = RegisterService(new BossHealthService());
 
             if (definition != null && definition.Phases.Count > 0)
             {
-                _phases = new BossPhaseController(definition);
-                Context.Services.Register(_phases);
-                _phases.Initialize(Context);
+                _phases = RegisterService(new BossPhaseController(definition));
                 TickSystem.Register(_phases);
+            }
+
+            _timeline = RegisterService(new BossTimelineRunner());
+            TickSystem.Register(_timeline);
+
+            _reactionWindows = RegisterService(new BossReactionWindowService());
+            TickSystem.Register(_reactionWindows);
+
+            _telegraphs = RegisterService(new BossTelegraphService());
+            TickSystem.Register(_telegraphs);
+
+            _projectiles = RegisterService(new BossProjectilePool());
+
+            if (_phases != null)
+            {
+                _scheduler = RegisterService(new BossAttackScheduler());
+                TickSystem.Register(_scheduler);
             }
         }
 
@@ -40,6 +58,11 @@ namespace TappyTale.BossFight.Core
         public BossEventHub Events => _events;
         public BossHealthService Health => _health;
         public BossPhaseController Phases => _phases;
+        public BossTimelineRunner Timeline => _timeline;
+        public BossAttackScheduler Scheduler => _scheduler;
+        public BossReactionWindowService ReactionWindows => _reactionWindows;
+        public BossTelegraphService Telegraphs => _telegraphs;
+        public BossProjectilePool Projectiles => _projectiles;
         public bool IsRunning { get; private set; }
 
         public event Action Started;
@@ -79,6 +102,7 @@ namespace TappyTale.BossFight.Core
                 return;
             }
 
+            _timeline.Cancel();
             _phases?.Stop();
             IsRunning = false;
             Context.Blackboard.IsFightActive = false;
@@ -95,6 +119,11 @@ namespace TappyTale.BossFight.Core
 
             Stop();
             TickSystem.Clear();
+            _scheduler?.Shutdown();
+            _projectiles.Shutdown();
+            _telegraphs.Shutdown();
+            _reactionWindows.Shutdown();
+            _timeline.Shutdown();
             _phases?.Shutdown();
             _health.Shutdown();
             _events.Shutdown();
@@ -102,6 +131,13 @@ namespace TappyTale.BossFight.Core
             Started = null;
             Stopped = null;
             _isDisposed = true;
+        }
+
+        private TService RegisterService<TService>(TService service) where TService : class, IBossService
+        {
+            Context.Services.Register(service);
+            service.Initialize(Context);
+            return service;
         }
 
         private void UpdateTargetData()
