@@ -77,25 +77,35 @@ namespace TappyTale.BossFight.Editor.Dashboard
 
     internal sealed class DashboardOverview
     {
+#if ODIN_INSPECTOR
         [ShowInInspector]
+#endif
         public string Status => "Sprint 1.3 editor tools installed";
 
+#if ODIN_INSPECTOR
         [ShowInInspector]
+#endif
         public string RuntimeArchitecture => "ScriptableObject configuration + runtime-owned mutable state";
     }
 
     internal sealed class DashboardValidation
     {
+#if ODIN_INSPECTOR
         [ShowInInspector]
+#endif
         public BossValidationReport LastReport { get; private set; }
 
+#if ODIN_INSPECTOR
         [Button(ButtonSizes.Large)]
+#endif
         public void Validate() => LastReport = BossFrameworkValidator.ValidateProject();
     }
 
     internal sealed class DashboardInstaller
     {
+#if ODIN_INSPECTOR
         [Button(ButtonSizes.Large)]
+#endif
         public void InstallOrRepair() => BossFrameworkInstaller.InstallOrRepair();
     }
 }
