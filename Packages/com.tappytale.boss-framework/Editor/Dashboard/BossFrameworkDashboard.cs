@@ -4,6 +4,7 @@ using UnityEditor;
 using UnityEngine;
 
 #if ODIN_INSPECTOR
+using Sirenix.OdinInspector;
 using Sirenix.OdinInspector.Editor;
 #endif
 
@@ -19,9 +20,9 @@ namespace TappyTale.BossFight.Editor.Dashboard
         {
             OdinMenuTree tree = new();
             tree.Add("Overview", new DashboardOverview());
-            tree.AddAllAssetsAtPath("Bosses", "Assets", typeof(Data.BossDefinition), true, true);
-            tree.AddAllAssetsAtPath("Phases", "Assets", typeof(Phases.BossPhaseDefinition), true, true);
-            tree.AddAllAssetsAtPath("Attacks", "Assets", typeof(Attacks.BossAttackDefinition), true, true);
+            tree.AddAllAssetsAtPath("Bosses", "Assets", typeof(TappyTale.BossFight.Data.BossDefinition), true, true);
+            tree.AddAllAssetsAtPath("Phases", "Assets", typeof(TappyTale.BossFight.Phases.BossPhaseDefinition), true, true);
+            tree.AddAllAssetsAtPath("Attacks", "Assets", typeof(TappyTale.BossFight.Attacks.BossAttackDefinition), true, true);
             tree.Add("Validation", new DashboardValidation());
             tree.Add("Installer", new DashboardInstaller());
             return tree;
@@ -76,18 +77,25 @@ namespace TappyTale.BossFight.Editor.Dashboard
 
     internal sealed class DashboardOverview
     {
+        [ShowInInspector]
         public string Status => "Sprint 1.3 editor tools installed";
+
+        [ShowInInspector]
         public string RuntimeArchitecture => "ScriptableObject configuration + runtime-owned mutable state";
     }
 
     internal sealed class DashboardValidation
     {
+        [ShowInInspector]
         public BossValidationReport LastReport { get; private set; }
+
+        [Button(ButtonSizes.Large)]
         public void Validate() => LastReport = BossFrameworkValidator.ValidateProject();
     }
 
     internal sealed class DashboardInstaller
     {
+        [Button(ButtonSizes.Large)]
         public void InstallOrRepair() => BossFrameworkInstaller.InstallOrRepair();
     }
 }
