@@ -19,7 +19,7 @@ namespace TappyTale.BossFight.Combat
         public void Initialize(BossContext context)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
-            context.Services.TryGet(out _events);
+            context.Services.TryResolve(out _events);
         }
 
         public bool ApplyDamage(BossDamageRequest request)
