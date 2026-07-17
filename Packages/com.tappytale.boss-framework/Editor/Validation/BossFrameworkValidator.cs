@@ -4,7 +4,6 @@ using TappyTale.BossFight.Attacks;
 using TappyTale.BossFight.Data;
 using TappyTale.BossFight.Phases;
 using UnityEditor;
-using UnityEngine;
 
 namespace TappyTale.BossFight.Editor.Validation
 {
@@ -95,9 +94,9 @@ namespace TappyTale.BossFight.Editor.Validation
                     report.Add(BossValidationSeverity.Error, "Attack cooldown cannot be negative.", path);
                 }
 
-                if (attack.Timeline == null)
+                if (attack.MaximumRange < attack.MinimumRange)
                 {
-                    report.Add(BossValidationSeverity.Warning, "Attack has no timeline.", path);
+                    report.Add(BossValidationSeverity.Error, "Attack maximum range is lower than minimum range.", path);
                 }
             }
         }
