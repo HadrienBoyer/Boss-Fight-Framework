@@ -1,19 +1,45 @@
 using System;
+using TappyTale.BossFight.Combat;
+using TappyTale.BossFight.Data;
+using TappyTale.BossFight.Events;
+using TappyTale.BossFight.Phases;
 
 namespace TappyTale.BossFight.Core
 {
     public sealed class BossRuntime : IDisposable
     {
         private bool _isDisposed;
+        private readonly BossEventHub _events;
+        private readonly BossHealthService _health;
+        private readonly BossPhaseController _phases;
 
-        public BossRuntime(BossContext context)
+        public BossRuntime(BossContext context, BossDefinition definition = null)
         {
             Context = context ?? throw new ArgumentNullException(nameof(context));
             TickSystem = new BossTickSystem();
+
+            _events = new BossEventHub();
+            Context.Services.Register(_events);
+            _events.Initialize(Context);
+
+            _health = new BossHealthService();
+            Context.Services.Register(_health);
+            _health.Initialize(Context);
+
+            if (definition != null && definition.Phases.Count > 0)
+            {
+                _phases = new BossPhaseController(definition);
+                Context.Services.Register(_phases);
+                _phases.Initialize(Context);
+                TickSystem.Register(_phases);
+            }
         }
 
         public BossContext Context { get; }
         public BossTickSystem TickSystem { get; }
+        public BossEventHub Events => _events;
+        public BossHealthService Health => _health;
+        public BossPhaseController Phases => _phases;
         public bool IsRunning { get; private set; }
 
         public event Action Started;
@@ -29,7 +55,9 @@ namespace TappyTale.BossFight.Core
 
             IsRunning = true;
             Context.Blackboard.IsFightActive = true;
+            _phases?.Start();
             Started?.Invoke();
+            _events.Raise(new BossEvent(BossEventType.FightStarted));
         }
 
         public void Tick(float deltaTime)
@@ -51,9 +79,11 @@ namespace TappyTale.BossFight.Core
                 return;
             }
 
+            _phases?.Stop();
             IsRunning = false;
             Context.Blackboard.IsFightActive = false;
             Stopped?.Invoke();
+            _events.Raise(new BossEvent(BossEventType.FightStopped));
         }
 
         public void Dispose()
@@ -65,6 +95,9 @@ namespace TappyTale.BossFight.Core
 
             Stop();
             TickSystem.Clear();
+            _phases?.Shutdown();
+            _health.Shutdown();
+            _events.Shutdown();
             Context.Services.Clear();
             Started = null;
             Stopped = null;
