@@ -74,6 +74,16 @@ namespace TappyTale.BossFight.Core
                 new BossDamageRequest(amount, sourceId, ignoreInvulnerability));
         }
 
+        public bool TryParry()
+        {
+            return Runtime != null && Runtime.ReactionWindows.TryParry();
+        }
+
+        public bool TryPerfectDodge()
+        {
+            return Runtime != null && Runtime.ReactionWindows.TryPerfectDodge();
+        }
+
         public void StartFight()
         {
             if (Runtime == null)
