@@ -20,14 +20,17 @@ namespace TappyTale.BossFight.Core
         private readonly BossReactionWindowService _reactionWindows;
         private readonly BossTelegraphService _telegraphs;
         private readonly BossProjectilePool _projectiles;
+        private readonly BossPayloadResolver _payloads;
+        private readonly BossTimelineActionExecutor _actionExecutor;
 
-        public BossRuntime(BossContext context, BossDefinition definition = null)
+        public BossRuntime(BossContext context, BossDefinition definition = null, BossPayloadLibrary payloadLibrary = null)
         {
             Context = context ?? throw new ArgumentNullException(nameof(context));
             TickSystem = new BossTickSystem();
 
             _events = RegisterService(new BossEventHub());
             _health = RegisterService(new BossHealthService());
+            _payloads = RegisterService(new BossPayloadResolver(payloadLibrary));
 
             if (definition != null && definition.Phases.Count > 0)
             {
@@ -45,6 +48,7 @@ namespace TappyTale.BossFight.Core
             TickSystem.Register(_telegraphs);
 
             _projectiles = RegisterService(new BossProjectilePool());
+            _actionExecutor = RegisterService(new BossTimelineActionExecutor());
 
             if (_phases != null)
             {
@@ -63,6 +67,8 @@ namespace TappyTale.BossFight.Core
         public BossReactionWindowService ReactionWindows => _reactionWindows;
         public BossTelegraphService Telegraphs => _telegraphs;
         public BossProjectilePool Projectiles => _projectiles;
+        public BossPayloadResolver Payloads => _payloads;
+        public BossTimelineActionExecutor ActionExecutor => _actionExecutor;
         public bool IsRunning { get; private set; }
 
         public event Action Started;
@@ -71,11 +77,7 @@ namespace TappyTale.BossFight.Core
         public void Start()
         {
             ThrowIfDisposed();
-            if (IsRunning)
-            {
-                return;
-            }
-
+            if (IsRunning) return;
             IsRunning = true;
             Context.Blackboard.IsFightActive = true;
             _phases?.Start();
@@ -86,22 +88,14 @@ namespace TappyTale.BossFight.Core
         public void Tick(float deltaTime)
         {
             ThrowIfDisposed();
-            if (!IsRunning)
-            {
-                return;
-            }
-
+            if (!IsRunning) return;
             UpdateTargetData();
             TickSystem.Tick(deltaTime);
         }
 
         public void Stop()
         {
-            if (_isDisposed || !IsRunning)
-            {
-                return;
-            }
-
+            if (_isDisposed || !IsRunning) return;
             _timeline.Cancel();
             _phases?.Stop();
             IsRunning = false;
@@ -112,19 +106,17 @@ namespace TappyTale.BossFight.Core
 
         public void Dispose()
         {
-            if (_isDisposed)
-            {
-                return;
-            }
-
+            if (_isDisposed) return;
             Stop();
             TickSystem.Clear();
             _scheduler?.Shutdown();
+            _actionExecutor.Shutdown();
             _projectiles.Shutdown();
             _telegraphs.Shutdown();
             _reactionWindows.Shutdown();
             _timeline.Shutdown();
             _phases?.Shutdown();
+            _payloads.Shutdown();
             _health.Shutdown();
             _events.Shutdown();
             Context.Services.Clear();
@@ -156,10 +148,7 @@ namespace TappyTale.BossFight.Core
 
         private void ThrowIfDisposed()
         {
-            if (_isDisposed)
-            {
-                throw new ObjectDisposedException(nameof(BossRuntime));
-            }
+            if (_isDisposed) throw new ObjectDisposedException(nameof(BossRuntime));
         }
     }
 }
